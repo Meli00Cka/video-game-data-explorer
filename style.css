@@ -1,0 +1,15 @@
+.stApp {
+    background: #683392;
+    background: linear-gradient(45deg, #00d1d8 0%, #853fbe 50%);
+    /* #31203a #f3b0af*/
+}
+
+*{ 
+  /* primaryColor  backgroundColor  secondaryBackgroundColor  textColor */
+  color: #6AAA6C      #F0F8F0        #D8E9D8           #2E4F2F
+         #0094d8       #272D2D         #210049          #e4f7ff #00d8d8;
+  
+  
+  
+  text-align: center;
+}
