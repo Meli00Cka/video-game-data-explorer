@@ -2,11 +2,15 @@ from bokeh.layouts import row,column,gridplot
 from bokeh.models.widgets import Tabs,Panel
 from bokeh.models import HoverTool
 from bokeh.plotting import figure
-
+from bokeh.palettes import Set3
+from bokeh.transform import cumsum
 import matplotlib.pyplot as plt
+from bokeh.layouts import row
 import functions as function
 import streamlit as st
+import seaborn as sns
 import pandas as pd
+from math import pi
 import numpy as np
 
 # def main():
@@ -79,12 +83,12 @@ with st.container(border=True):
 
 with st.container(border=True):
     
-    st.write("First lets see the top 15 best-selling games:")
-    p1 = figure(title="Top 15 Best-Selling Video Games", x_axis_label="Name", y_axis_label="Global Sales (Millions)", x_range=list(data.loc[:14, "Name"]),tools="box_select,pan,wheel_zoom,reset,save")
+    st.write("First lets see the top 20 best-selling games:")
+    p1 = figure(title="Top 20 Best-Selling Video Games", x_axis_label="Name", y_axis_label="Global Sales (Millions)", x_range=list(data.loc[:19, "Name"]),tools="box_select,pan,wheel_zoom,reset,save")
     
     p1.vbar(top="Global_Sales", x="Name",source=data, width=0.5, fill_color="#B04CCB")
     p1.xaxis.major_label_orientation = 3.14/5.5
-    p1.add_tools(HoverTool(tooltips=[("Name", "@Name"),("Global Sales", "@Global_Sales"), ("Publisher", "@Publisher"), ("Genre", "@Genre"), ("Year", "@Year")]))
+    p1.add_tools(HoverTool(tooltips=[("Rank", "@Rank"), ("Name", "@Name"), ("Global Sales", "@Global_Sales"), ("Publisher", "@Publisher"), ("Genre", "@Genre"), ("Year", "@Year")]))
     
     
     
@@ -92,16 +96,16 @@ with st.container(border=True):
     p2.add_tools(HoverTool(tooltips=[("Name", "@Name"),("Global Sales", "@Global_Sales"), ("Publisher", "@Publisher"), ("Genre", "@Genre"), ("Year", "@Year")]))
     
     years = sorted(data["Year"].unique())
-    t15_nintendo_sales = []
+    top_nintendo_sales = []
 
     # Best seller games of each year
     for y in years:
         filtered_data = data.loc[(data["Year"] == y) & (data["Publisher"] == "Nintendo")]
         max_global_sales = filtered_data["Global_Sales"].max()
-        t15_nintendo_sales.append(max_global_sales)
+        top_nintendo_sales.append(max_global_sales)
 
-    p2.line(x=years, y=t15_nintendo_sales, color="#0063d8")
-    p2.square(x=years, y=t15_nintendo_sales, fill_color="#b800cf", line_color="#b800cf", size=7, legend_label="Best seller of the year")
+    p2.line(x=years, y=top_nintendo_sales, color="#0063d8")
+    p2.square(x=years, y=top_nintendo_sales, fill_color="#b800cf", line_color="#b800cf", size=7, legend_label="Best seller of the year")
     
     t15_nintendo = data[(data["Publisher"] == "Nintendo")]
     p2.square(source=t15_nintendo, x="Year", y="Global_Sales", legend_label="Nintendo games")
@@ -109,18 +113,75 @@ with st.container(border=True):
     top_nintendo_games = data[(data["Publisher"] == "Nintendo") & (data["Rank"] <= 15)]
     p2.hex(source=top_nintendo_games, x="Year", y="Global_Sales", size=7, fill_color="#00d7ff", line_color="#0000", legend_label="Top 15 by Rank")
     
-    
-    
     p1.toolbar_location, p2.toolbar_location = "above", "above"
-        
-        
+
+    
+    
+    
+    df1 = data.loc[data["Publisher"]=="Nintendo"]
+    n_games=[]
+    n_genres=[]
+    for y in years:
+        selected_year = df1.loc[data["Year"]==y]
+        n_games.append(selected_year["Name"].nunique())
+        n_genres.append(selected_year["Genre"].nunique())
+            
+    g_each_y = pd.DataFrame({"year":years,"games":n_games, "genres":n_genres})
+
+
+    p3 = figure(title="Nintendo game releases", y_axis_label="Games", x_axis_label="Year", tools="crosshair,pan,wheel_zoom,reset,save")
+    
+    p3.vbar(source=g_each_y, x="year", top="games", width=0.5, fill_color="#000")
+    p3.line(source=g_each_y, x="year", y="games", line_width=3, line_color="#00d7ff", legend_label="Games each year")
+    p3.add_tools(HoverTool(tooltips=[("Games", "@games"), ("Year", "@year"), ("Genres", "@genres")]))
+    
+
+
+    game_counts = []
+    for g in data["Genre"].unique():
+        game_counts.append({"genre": g, "games": df1.loc[df1["Genre"]==g]["Name"].nunique()})
+
+    n_games_genre = pd.DataFrame(game_counts)
+    
+    n_games_genre['angle'] = n_games_genre['games']/n_games_genre['games'].sum() * 2*pi
+    n_games_genre['color'] = Set3[len(n_games_genre)]
+
+    p4 = figure(height=350, title="Number of game releases in each genre", toolbar_location=None,
+               tools="hover", tooltips="@genre: @games", x_range=(-0.5, 1.0))
+
+    p4.wedge(x=0.2, y=1, radius=0.13,
+            start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
+            line_color="white", fill_color='color', legend_field='genre', source=n_games_genre)
+
+    p4.axis.axis_label = None
+    p4.axis.visible = False
+    p4.grid.grid_line_color = None
+
+    
+    
+    avg_gs = np.average(list(data.loc[2:19, "Global_Sales"]))
+    top_g = data.loc[data["Rank"]==1]
+    totalg_nintendo = df1["Name"].nunique()
+    
+            
     st.bokeh_chart(p1, use_container_width=True)
     
-    st.write("Wii Sports had 82M Sales!, This chart shows other popular games from this publisher:")
+    st.write(f"""
+        Ranks from 20 to 2 had an average of __{avg_gs:.2f}M__ Global sales;
+        \rBut '__{top_g["Name"][0]}__' had __{top_g["Global_Sales"][0]}M__ Sales!
+        \rThis chart shows other popular games from {top_g["Publisher"][0]}, {top_g["Name"][0]}'s publisher:""")
+    
     st.bokeh_chart(p2, use_container_width=True)
     
+    st.write(f"As you can see between 2005 and 2010, __{top_g['Publisher'][0]}__ did really well and after the release of __{top_g['Name'][0]}__ They entered the top 15 more than before.")
+    st.write(f"This publisher has made {totalg_nintendo} games in total, so let's see how many games they made each year:")
+    st.bokeh_chart(p3, use_container_width=True)
+    st.bokeh_chart(p4, use_container_width=True)
+    st.write(f"Accoring to the plot, __{top_g['Name'][0]}__ made 57 games in 2004, Thats __6.3X__ or __533%__ more games than 2003!")
+    st.write("And top 3 genres where ####top tree with slicing###")
     
-    st.write('As you can see between 2005 and 2010, Nintendo did really well and after the release of "Wii Sports" They entered the top 15 more than before.')
+    
+    st.write("Nintendo had more sales in UK.......")
 
 
 
@@ -128,29 +189,29 @@ with st.container(border=True):
 
 
 
-# with st.container(border=True):
-#     st.write("# Data Playground")
-#     st.data_editor(data= data)
+with st.container(border=True):
+    st.write("# Data Playground")
+    st.data_editor(data= data)
 
 
 
 
 # sidebar
-# with st.sidebar:
+with st.sidebar:
     
-    # data_pg = st.button("Playground", use_container_width=True)
+    data_pg = st.button("Playground", use_container_width=True)
     
-    # add_radio = st.radio(
-    #     "Choose a shipping method",
-    #     ("Standard (5-15 days)", "Express (2-5 days)")
-    # )
+    add_radio = st.radio(
+        "Choose a shipping method",
+        ("Standard (5-15 days)", "Express (2-5 days)")
+    )
     
-    # add_selectbox = st.selectbox(
-    # "How would you like to be contacted?",
-    # ("Email", "Home phone", "Mobile phone")
-    # )
+    add_selectbox = st.selectbox(
+    "How would you like to be contacted?",
+    ("Email", "Home phone", "Mobile phone")
+    )
     
-    # x = st.slider("slider",1,100,30)
+    x = st.slider("slider",1,100,30)
 
 
 
