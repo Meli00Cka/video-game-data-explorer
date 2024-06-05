@@ -1,20 +1,11 @@
-# from bokeh.layouts import row,column,gridplot
-# from bokeh.models.widgets import Tabs,Panel
+
 from bokeh.models import HoverTool
 from bokeh.plotting import figure
-# from bokeh.palettes import Set3
 from bokeh.transform import cumsum
-# import matplotlib.pyplot as plt
-from bokeh.layouts import row
 import functions as fu
 import streamlit as st
-# import seaborn as sns
-# import pandas as pd
-# from math import pi
 import numpy as np
 
-
-# def main():
 
 # streamlit config
 st.set_page_config(
@@ -120,7 +111,6 @@ with st.container(border=True):
     p2.square(x=years, y=top_sales, fill_color="#b800cf", line_color="#b800cf", size=7, legend_label="Best seller of the year")
     p2.square(source=publisher_games, x="Year", y="Global_Sales", legend_label=f"{publisher} games")
     p2.hex(source=t15_publisher_games, x="Year", y="Global_Sales", size=7, fill_color="#00d7ff", line_color="#0000", legend_label="Top 15 by Rank")
-    ####################################### buttons for controling plots (showing them or not) #########################
     
     
     # p3
@@ -156,33 +146,3 @@ with st.container(border=True):
     st.write(f"According to the plot, __{top_g['Name'][0]}__ made 57 games in 2004, Thats __6.3X__ or __533%__ more games than 2003!")
     st.write(f"And top 3 genres are: {fu.t3_genres(publisher_n_games_in_genre)}")
 
-
-# sidebar
-with st.sidebar:
-    
-    data_pg = st.button("Playground", use_container_width=True)
-    
-    add_radio = st.radio(
-        "Choose a shipping method",
-        ("Standard (5-15 days)", "Express (2-5 days)")
-    )
-    
-    add_selectbox = st.selectbox(
-    "How would you like to be contacted?",
-    ("Email", "Home phone", "Mobile phone")
-    )
-    
-    x = st.slider("slider",1,100,30)
-
-
-
-with st.container(border=True):
-    st.write("# Data Playground")
-    st.data_editor(data=data)
-
-
-
-
-
-# if __name__ == "__main__":
-    # main()
