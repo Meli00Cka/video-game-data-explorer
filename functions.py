@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from bokeh.palettes import Set3
 from math import pi
+import time
 
 
 def local_css(file_name):
@@ -62,3 +63,21 @@ def games_in_each_genre(data,publisher):
     df['color'] = Set3[len(df)]
     
     return df
+
+
+def toggle_mode():
+    # toggle between True and False
+    st.session_state.mode = not st.session_state.mode
+    
+def stream_text(text):
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.3)
+        
+def mode_stats(cool_text=False):
+    mode_label = "Data Playground" if st.session_state.mode else "Story Mode"
+    text = f"Current Mode: {mode_label}"
+    if cool_text:
+        st.info((text))
+    else:
+        st.write(text)
