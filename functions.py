@@ -1,8 +1,10 @@
+from bokeh.palettes import Set3
+from itertools import product
 import streamlit as st
 import pandas as pd
-from bokeh.palettes import Set3
 from math import pi
 import time
+
 
 
 def local_css(file_name):
@@ -69,10 +71,12 @@ def toggle_mode():
     # toggle between True and False
     st.session_state.mode = not st.session_state.mode
     
+    
 def stream_text(text):
     for word in text.split(" "):
         yield word + " "
         time.sleep(0.3)
+        
         
 def mode_stats(cool_text=False):
     mode_label = "Data Playground" if st.session_state.mode else "Story Mode"
@@ -81,3 +85,9 @@ def mode_stats(cool_text=False):
         st.info((text))
     else:
         st.write(text)
+
+
+def generate_prediction_data(publisher, year, platform, genre):    
+    columns = ['Publisher', 'Year', 'Platform', 'Genre']
+    data = list(product([publisher], [year], platform, genre)) # combine the values
+    return pd.DataFrame(data, columns=columns)

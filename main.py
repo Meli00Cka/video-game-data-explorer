@@ -4,6 +4,7 @@ from bokeh.transform import cumsum
 import functions as fu
 import streamlit as st
 import numpy as np
+from model import model
 
 
 
@@ -14,13 +15,16 @@ def main():
         layout="wide",page_title="VG Data explorer",page_icon="./img/logo.png",
         initial_sidebar_state="auto",menu_items=None)
     
-    if "mode" not in st.session_state:
-        st.session_state.mode = False
     
     fu.local_css("style.css")
 
     data = fu.load_prepare_csv("./data/vgsales.csv")
 
+    if "mode" not in st.session_state:
+        st.session_state.mode = False
+    
+    # if "dt_model" not in st.session_state:
+    #     st.session_state.dt_model = model(data)
 
 
     with st.container(height=200, border=False):
@@ -94,7 +98,7 @@ def main():
             fu.mode_stats(True)
         
             with st.container(border=True):
-                st.write("Feel free to use the plot tools (from the toolbox above them)\n\nOr if you want more control you can use the left side bar\n\nYou can also switch to Playground mode")
+                st.write("Feel free to use the plot tools (from the toolbox above them)\n\nOr if you want more control you can use the left side bar\n\nYou can also switch to Playground mode")#\n\nIf plots are duplicated close and open the left side bar to fix it
             
             st.write(data.describe())
                 
@@ -140,7 +144,7 @@ def main():
 
 
         p1.add_tools(HoverTool(tooltips=[("Name","@Name"),("Global Sales","@Global_Sales"),("Publisher","@Publisher"),("Genre","@Genre"),("Year","@Year"),("Rank","@Rank")]))
-        p2.add_tools(HoverTool(tooltips=[("Name","@Name"),("Global Sales","@Global_Sales"),("Publisher","@Publisher"),("Genre","@Genre"),("Year","@Year")]))
+        p2.add_tools(HoverTool(tooltips=[("Name","@Name"),("Global Sales","@Global_Sales"),("Publisher","@Publisher"),("Genre","@Genre"),("Year","@Year"),("Platform","@Platform")]))
         p3.add_tools(HoverTool(tooltips=[("Games", "@games"), ("Year", "@year"), ("Genres", "@genres")]))
 
         p1.toolbar_location, p2.toolbar_location, p3.toolbar_location= "above", "above", "above"
@@ -185,7 +189,7 @@ def main():
 
         # show plots
         if not st.session_state.mode:
-            st.write("First lets see the top 20 best-selling games:")
+            st.write("First let's see the top 20 best-selling games:")
         st.bokeh_chart(p1, use_container_width=True)
         if not st.session_state.mode:
             st.write(f"""
@@ -210,6 +214,68 @@ def main():
             st.write(f"According to the plot, __{top_g['Name'][0]}__ released 57 games in 2004, Thats __6.3X__ or __533%__ more games than 2003!")
             st.write(f"And top 3 genres are: {fu.t3_genres(publisher_n_games_in_genre)}")
 
+        
+
+    with st.container(border=True):
+        
+        dt_model = model(data)
+        dt_model.do_all("dt")
+        
+        genre_names =  dt_model.genre_names
+        
+        p5 = figure(title="Actual vs Predicted Labels", x_axis_label="Index", y_axis_label="Values",tools="box_select,pan,wheel_zoom,reset,save")
+        p5.circle(x=range(len(dt_model.y_pred)), y=dt_model.y_pred, legend_label="Predicted", color=color_palette[3], alpha=0.5)
+        p5.circle(x=range(len(dt_model.y_test)), y=dt_model.y_test, legend_label="Actual Labels", color=color_palette[2], alpha=0.5)
+        
+        
+        st.bokeh_chart(p5,use_container_width=True)
+        st.write(f"If {publisher} plans their next role-playing game for PC in 2017, how much will it sale on global?")
+        st.write("To predict and find out, let's use a Desicion Tree model with features: Year, Genre, Platform and Publisher.")
+        
+        
+        if st.session_state.mode:
+            col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+            with col_f1:
+                pr_publisher = st.selectbox("Publisher", data["Publisher"].unique(),index=0)
+                pr_publisher = "Publisher_"+pr_publisher
+            with col_f2:
+                pr_platform = st.selectbox("Platform", data["Platform"].unique(),index=14)
+            with col_f3:
+                pr_genre = st.selectbox("Genre", genre_names, index=3)
+            with col_f4:
+                pr_year = st.number_input("Year", min_value=1900, max_value=2100, value=2017)
+            
+            ### needs function
+            if pr_platform not in dt_model.data.columns:
+                pr_platform = "Platform_Other"
+            else:
+                pr_platform = "Platform_"+pr_platform
+                
+            if pr_publisher not in dt_model.data.columns:
+                pr_publisher = "Publisher_Other"
+            else:
+                pr_publisher = "Publisher_"+pr_publisher
+                
+            for i,g in enumerate(genre_names):
+                if pr_genre == g:
+                    pr_genre = i
+                    
+        else:    
+            pr_publisher = "Publisher_Nintendo"
+            pr_platform = "Platform_DS"
+            pr_genre = 3
+            pr_year = 2007
+        
+        dt_predict = dt_model.predict(publisher=pr_publisher, platform=pr_platform, genre=pr_genre, year=pr_year)
+        
+        st.write(dt_predict)
+        
+        
+        
+        
+        
+
+        
         
 
 if __name__ == "__main__":
