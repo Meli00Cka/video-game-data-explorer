@@ -100,7 +100,7 @@ def main():
             fu.mode_stats(True)
         
             with st.container(border=True):
-                st.write("Feel free to use the plot tools (from the toolbox above them)\n\nOr if you want more control you can use the left side bar\n\nYou can also switch to Playground mode\n\nIf plots are duplicated, just close and open the left side bar")
+                st.write("Feel free to use the plot tools (from the toolbox above them)\n\nOr if you want more control you can use the left side bar\n\nYou can also switch to Playground mode\n\nHave fun exploring around!")
             
             st.write(data.describe())
                 
