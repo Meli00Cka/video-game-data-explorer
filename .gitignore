@@ -161,3 +161,5 @@ cython_debug/
 
 # My stuff
 _my_stuff/
+
+.venv
