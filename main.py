@@ -5,8 +5,7 @@ import functions as fu
 import streamlit as st
 import numpy as np
 from model import model
-
-
+import pandas as pd
 
 
 def main():
@@ -15,24 +14,17 @@ def main():
         layout="wide",page_title="VG Data explorer",page_icon="./img/logo.png",
         initial_sidebar_state="auto",menu_items=None)
     
-    
     fu.local_css("style.css")
 
     data = fu.load_prepare_csv("./data/vgsales.csv")
 
     if "mode" not in st.session_state:
         st.session_state.mode = False
-    
-    # if "dt_model" not in st.session_state:
-    #     st.session_state.dt_model = model(data)
-
 
     with st.container(height=200, border=False):
-        st.write("# Video game\n## Data explorer")
-
+        st.write("# Video game\n## Data explorer\n\n")
 
     with st.sidebar:
-        
         if st.button(label="Switch Mode",use_container_width=True):
             fu.toggle_mode()
         
@@ -41,7 +33,6 @@ def main():
                 st.write("You can edit the dataset, And from the list below choose and analyze any publisher you like.")
         
         fu.mode_stats()
-        
         
         st.write("<hr><br>",unsafe_allow_html=True)
         
@@ -63,9 +54,13 @@ def main():
         p_bestseller = st.toggle("Best seller", value=True)
         p_games = st.toggle("Games", value=True)
         
-        st.write("<hr><br>",unsafe_allow_html=True)
+        st.write("<hr>",unsafe_allow_html=True)
+        
+        st.write("#### Source code:")
+        st.link_button("GitHub", "https://github.com/Meli00Cka/video-game-data-explorer", use_container_width=True)
     
-    
+    st.write("<br><br>",unsafe_allow_html=True)
+    st.write("### Dataset")
     with st.container(border=True):
         
         data_info="""
@@ -90,15 +85,22 @@ def main():
 
         Global_Sales -> Total worldwide sales"""
 
-
         col1, col2 = st.columns([2, 4])
+        with col2:
+        
+            selected_col = st.multiselect(label="Quick view of the dataset:", options=data.columns, default=list(data.columns), help=data_info)
+            if not st.session_state.mode:
+                index = st.slider(label="data index", value=8, label_visibility="hidden")
+                st.write(data.loc[:index, selected_col])
+            else:
+                data = st.data_editor(data[selected_col])
         
         with col1:
         
             fu.mode_stats(True)
         
             with st.container(border=True):
-                st.write("Feel free to use the plot tools (from the toolbox above them)\n\nOr if you want more control you can use the left side bar\n\nYou can also switch to Playground mode")#\n\nIf plots are duplicated close and open the left side bar to fix it
+                st.write("Feel free to use the plot tools (from the toolbox above them)\n\nOr if you want more control you can use the left side bar\n\nYou can also switch to Playground mode\n\nIf plots are duplicated, just close and open the left side bar")
             
             st.write(data.describe())
                 
@@ -108,22 +110,12 @@ def main():
                     <h6>Fields include:</h6>{data_info}""",unsafe_allow_html=True)
             st.link_button("Open dataset source", "https://www.kaggle.com/datasets/gregorut/videogamesales")
         
-        with col2:
-        
-            selected_col = st.multiselect(label="Quick view of the dataset:", options=data.columns, default=list(data.columns), help=data_info)
-            if not st.session_state.mode:
-                index = st.slider(label="data index", value=7, label_visibility="hidden")
-                st.write(data.loc[:index, selected_col])
-            else:
-                data = st.data_editor(data[selected_col])
-
-
-
-
-
+    st.write("<br><br>",unsafe_allow_html=True)
+    st.write("### Analyse")
     with st.container(border=True):
         
-
+        color_palette=["#4CC9F0","#4361EE","#10439F","#874CCC","#F27BBD"]
+        
         top_sales ,years = fu.top_sales_of_year(data, publisher)
         publisher_games = data[data["Publisher"] == publisher]
         t15_publisher_games = data[(data["Publisher"] == publisher) & (data["Rank"] <= 15)]
@@ -133,16 +125,16 @@ def main():
         avg_gs = np.average(list(data.loc[2:19, "Global_Sales"]))
         top_g = data.loc[data["Rank"]==1]
         totalg_publisher = publisher_games["Name"].nunique()
-
-
         
+        genre_c_n = fu.genre_freq(data)
+
         
         p1 = figure(title="Top 20 Best-Selling Video Games", x_axis_label="Name", y_axis_label="Sales (Millions)", x_range=list(data.loc[:19, "Name"]), tools="box_select,pan,wheel_zoom,reset,save")
         p2 = figure(title=f"{publisher} Games", y_axis_label="Global Sales (Millions)", x_axis_label="Year", tools="crosshair,box_select,pan,wheel_zoom,lasso_select,reset,save")
         p3 = figure(title=f"{publisher} game releases", y_axis_label="Games", x_axis_label="Year", tools="crosshair,pan,wheel_zoom,reset,save")
         p4 = figure(title="Number of game releases in each genre", toolbar_location=None,tools="hover", tooltips="@genre: @games", x_range=(-0.5, 1.0))
-
-
+        p6 = figure(title="Most frequent genres", toolbar_location=None,tools="hover", tooltips="@Genre: @Frequency", x_range=(-0.5, 1.0))
+        
         p1.add_tools(HoverTool(tooltips=[("Name","@Name"),("Global Sales","@Global_Sales"),("Publisher","@Publisher"),("Genre","@Genre"),("Year","@Year"),("Rank","@Rank")]))
         p2.add_tools(HoverTool(tooltips=[("Name","@Name"),("Global Sales","@Global_Sales"),("Publisher","@Publisher"),("Genre","@Genre"),("Year","@Year"),("Platform","@Platform")]))
         p3.add_tools(HoverTool(tooltips=[("Games", "@games"), ("Year", "@year"), ("Genres", "@genres")]))
@@ -150,9 +142,7 @@ def main():
         p1.toolbar_location, p2.toolbar_location, p3.toolbar_location= "above", "above", "above"
 
 
-
         # p1
-        color_palette=["#4CC9F0","#4361EE","#3A0CA3","#9d4edd","#F72585"]
         if p_Global:
             p1.vbar(top="Global_Sales",legend_label="Total worldwide", x="Name",source=data, width=0.5, fill_color=color_palette[0])
         if p_NA:
@@ -164,6 +154,14 @@ def main():
         if p_Other:
             p1.vbar(top="Other_Sales",legend_label="Rest of the world", x="Name",source=data, width=0.5, fill_color=color_palette[4])
         p1.xaxis.major_label_orientation = 3.14/5.5
+        
+        # p6
+        p6.wedge(x=0.06, y=1, radius=0.4, start_angle=cumsum("angle", include_zero=True), end_angle=cumsum("angle"),
+                line_color="white", fill_color="color", legend_field="Genre", source=genre_c_n)
+        p6.axis.axis_label=None
+        p6.axis.visible=False
+        p6.grid.grid_line_color = None
+            
 
         # p2
         if p_bestseller:
@@ -190,7 +188,13 @@ def main():
         # show plots
         if not st.session_state.mode:
             st.write("First let's see the top 20 best-selling games:")
-        st.bokeh_chart(p1, use_container_width=True)
+        
+        col_plot1, col_plot6  = st.columns(spec=[5,2.5])
+        with col_plot1:
+            st.bokeh_chart(p1, use_container_width=True)
+        with col_plot6:
+            st.bokeh_chart(p6, use_container_width=True)
+        
         if not st.session_state.mode:
             st.write(f"""
                 Ranks from 20 to 2 had an average of __{avg_gs:.2f}M__ Global sales;
@@ -214,8 +218,9 @@ def main():
             st.write(f"According to the plot, __{top_g['Name'][0]}__ released 57 games in 2004, Thats __6.3X__ or __533%__ more games than 2003!")
             st.write(f"And top 3 genres are: {fu.t3_genres(publisher_n_games_in_genre)}")
 
-        
 
+    st.write("<br><br>",unsafe_allow_html=True)
+    st.write("### Predict")
     with st.container(border=True):
         
         dt_model = model(data)
@@ -223,18 +228,13 @@ def main():
         
         genre_names =  dt_model.genre_names
         
-        p5 = figure(title="Actual vs Predicted Labels", x_axis_label="Index", y_axis_label="Values",tools="box_select,pan,wheel_zoom,reset,save")
+        p5 = figure(title="Actual vs Predicted Labels", x_axis_label="Index", y_axis_label="Values",tools="box_select,pan,wheel_zoom,reset,save",height=450)
         p5.circle(x=range(len(dt_model.y_pred)), y=dt_model.y_pred, legend_label="Predicted", color=color_palette[3], alpha=0.5)
-        p5.circle(x=range(len(dt_model.y_test)), y=dt_model.y_test, legend_label="Actual Labels", color=color_palette[2], alpha=0.5)
-        
-        
-        st.bokeh_chart(p5,use_container_width=True)
-        st.write(f"If {publisher} plans their next role-playing game for PC in 2017, how much will it sale on global?")
-        st.write("To predict and find out, let's use a Desicion Tree model with features: Year, Genre, Platform and Publisher.")
+        p5.circle(x=range(len(dt_model.y_test)), y=dt_model.y_test, legend_label="Actual Labels", color=color_palette[0], alpha=0.5)
         
         
         if st.session_state.mode:
-            col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+            col_f1, col_f2, col_f3, col_f4 , col_f5= st.columns(5)
             with col_f1:
                 pr_publisher = st.selectbox("Publisher", data["Publisher"].unique(),index=0)
                 pr_publisher = "Publisher_"+pr_publisher
@@ -244,17 +244,19 @@ def main():
                 pr_genre = st.selectbox("Genre", genre_names, index=3)
             with col_f4:
                 pr_year = st.number_input("Year", min_value=1900, max_value=2100, value=2017)
+            with col_f5:
+                st.write("<br>",unsafe_allow_html=True)
+                predict_stats = st.button("Predict",use_container_width=True)
             
             ### needs function
-            if pr_platform not in dt_model.data.columns:
+            if "Platform_"+pr_platform not in dt_model.data.columns:
+                st.write(pr_platform)
                 pr_platform = "Platform_Other"
+                st.write(pr_platform)
             else:
                 pr_platform = "Platform_"+pr_platform
-                
             if pr_publisher not in dt_model.data.columns:
-                pr_publisher = "Publisher_Other"
-            else:
-                pr_publisher = "Publisher_"+pr_publisher
+                pr_publisher = "Other"
                 
             for i,g in enumerate(genre_names):
                 if pr_genre == g:
@@ -264,19 +266,83 @@ def main():
             pr_publisher = "Publisher_Nintendo"
             pr_platform = "Platform_DS"
             pr_genre = 3
-            pr_year = 2007
+            pr_year = 2017
+            predict_stats=True
         
-        dt_predict = dt_model.predict(publisher=pr_publisher, platform=pr_platform, genre=pr_genre, year=pr_year)
-        
-        st.write(dt_predict)
-        
-        
+        if predict_stats:
+            dt_predict = dt_model.predict(publisher=pr_publisher, platform=pr_platform, genre=pr_genre, year=pr_year)
         
         
-        
+        if not st.session_state.mode:
+            ### ML
+            pub_pr_platform = list(data["Platform"].unique())
 
+            for p in pub_pr_platform.copy():
+                if "Platform_" + p not in dt_model.data.columns:
+                    pub_pr_platform.remove(p)
+            pub_pr_platform.append("Other")
+
+            # input
+            pub_pr_publisher = "Nintendo"
+            pub_pr_year = 2017
+            # pub_pr_platform
+            pub_pr_genre = genre_names.values()
+
+            # preprocess
+            pred_df = fu.generate_prediction_data(pub_pr_publisher, pub_pr_year, pub_pr_platform, pub_pr_genre)
+
+            new_df = pd.DataFrame(columns=dt_model.data.columns.drop("Global_Sales"))
+            new_records = dt_model.one_hot_encode(pred_df)
+            new_df = pd.concat([new_df, new_records], ignore_index=True).fillna(0.0)
+
+            pub_pr_platform = list(data["Platform"].unique())
+
+            for p in pub_pr_platform.copy():
+                if "Platform_" + p not in dt_model.data.columns:
+                    pub_pr_platform.remove(p)
+                    
+            pub_pr_platform.append("Other")
+
+            pred_val = dt_model.predict(pub_pr_publisher, pub_pr_platform, pub_pr_genre, pub_pr_year, single_predict=False)
+
+            publisher_predict = dt_model.X_user.assign(Global_Sales=pred_val)
+
+            extra_col = ["Year"] + list(publisher_predict.columns[30:-1])
+            publisher_predict = publisher_predict.drop(columns=extra_col, axis=1, inplace=False)
+
+            publisher_predict["Genre"] = dt_model.decode_column(publisher_predict["Genre"],genre_names)
+
+            # predicted value
+            publisher_predict = publisher_predict.sort_values(by="Global_Sales",ascending=False)
+            
+            ####
+            
+
+            st.write(f"If {publisher} plans their next role-playing game for PC in 2017, how much will it sale on global?")
+            st.write("To predict and find out, let's train a Desicion Tree model with features: Year, Genre, Platform and Publisher.")
+            
         
+        with st.container(border=True):
+            col_plot5, col3 = st.columns([2,4])
         
+            with col_plot5:
+                if not st.session_state.mode:
+                    st.bokeh_chart(p5,use_container_width=True)
+        
+            with col3:
+                if not st.session_state.mode:
+                    st.write(f"The MSE error is: {dt_model.mse_error:.2f} And the predicted value for role-playing game is __{dt_predict[0]:.2f}M__,\n\n So I decided to predict in every possible way to get a better result and find the best genre and platform.\n\nHere is the result:")
+        
+                    selected_p_col = st.multiselect(label="select",label_visibility="hidden",options=publisher_predict.columns,default=["Genre","Global_Sales"])
+                    selected_p_index = st.slider(label="select",label_visibility="hidden",max_value=len(publisher_predict), min_value=1)
+        
+                    st.write(publisher_predict[selected_p_col].head(selected_p_index))
+        
+                    st.write(f"{publisher_predict['Genre'].values[0]} seems to be the best genre in {pub_pr_year} for {publisher}, Also platforms don't really make a difference")
+            
+                    
+            if predict_stats and st.session_state.mode:
+                st.info(f"The predicted value is:  __{dt_predict[0]:.2f}M__")
 
 if __name__ == "__main__":
     main()

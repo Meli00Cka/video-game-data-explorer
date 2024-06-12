@@ -87,7 +87,24 @@ def mode_stats(cool_text=False):
         st.write(text)
 
 
+def genre_freq(data):
+    genre_counts = data["Genre"].value_counts().values
+    genre_names = data["Genre"].value_counts().index
+    data = pd.DataFrame({"Genre": genre_names, "Frequency": genre_counts})
+
+    data['angle'] = data['Frequency']/data['Frequency'].sum() * 2*pi
+    data['color'] = Set3[len(data)]
+    
+    return data
+
+
 def generate_prediction_data(publisher, year, platform, genre):    
     columns = ['Publisher', 'Year', 'Platform', 'Genre']
+    data = list(product([publisher], [year], platform, genre)) # combine the values
+    return pd.DataFrame(data, columns=columns)
+
+def generate_prediction_data(publisher, year, platform, genre):    
+    columns = ["Publisher", "Year", "Platform", "Genre"]
+    
     data = list(product([publisher], [year], platform, genre)) # combine the values
     return pd.DataFrame(data, columns=columns)
