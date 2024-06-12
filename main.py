@@ -93,7 +93,7 @@ def main():
                 index = st.slider(label="data index", value=8, label_visibility="hidden")
                 st.write(data.loc[:index, selected_col])
             else:
-                data = st.data_editor(data[selected_col])
+                data = st.data_editor(data)
         
         with col1:
         
