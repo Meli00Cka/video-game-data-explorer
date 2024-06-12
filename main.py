@@ -88,8 +88,8 @@ def main():
         col1, col2 = st.columns([2, 4])
         with col2:
         
-            selected_col = st.multiselect(label="Quick view of the dataset:", options=data.columns, default=list(data.columns), help=data_info)
             if not st.session_state.mode:
+                selected_col = st.multiselect(label="Quick view of the dataset:", options=data.columns, default=list(data.columns), help=data_info)
                 index = st.slider(label="data index", value=8, label_visibility="hidden")
                 st.write(data.loc[:index, selected_col])
             else:
