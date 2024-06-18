@@ -254,6 +254,7 @@ def main():
         
         if not st.session_state.mode:
             ### ML
+            
             # inputs
             pub_pr_platform = list(data["Platform"].unique())
             
