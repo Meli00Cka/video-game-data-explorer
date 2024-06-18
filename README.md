@@ -10,12 +10,11 @@ If you are interested [Click Here](https://video-game-data-explorer.streamlit.ap
 
 You can also [download](https://github.com/Meli00Cka/video-game-data-explorer/archive/refs/heads/main.zip) the source code and follow these steps to run the app on your local machine:
 
+<br>
+
 make sure you're in the app directory
 
-<br>
 1. Create and activate a python virtual environment (Optional):
-
-
    ```
    python3 -m venv .venv
    ```
@@ -27,7 +26,7 @@ make sure you're in the app directory
    ```
    pip install -r requirements.txt
    ```
-   
+
 3. Run the app:
    ```
    streamlit run main.py
