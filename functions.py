@@ -99,12 +99,18 @@ def genre_freq(data):
 
 
 def generate_prediction_data(publisher, year, platform, genre):    
-    columns = ['Publisher', 'Year', 'Platform', 'Genre']
+    columns = ["Publisher", "Year", "Platform", "Genre"]  
     data = list(product([publisher], [year], platform, genre)) # combine the values
     return pd.DataFrame(data, columns=columns)
 
-def generate_prediction_data(publisher, year, platform, genre):    
-    columns = ["Publisher", "Year", "Platform", "Genre"]
+
+def convert_inputs(pr_platform, pr_publisher, model_data_columns):
+    if "Platform_"+pr_platform not in model_data_columns:
+        pr_platform = "Platform_Other"
+    else:
+        pr_platform = "Platform_"+pr_platform
+
+    if pr_publisher not in model_data_columns:
+        pr_publisher = "Other"
     
-    data = list(product([publisher], [year], platform, genre)) # combine the values
-    return pd.DataFrame(data, columns=columns)
+    return pr_platform, pr_publisher

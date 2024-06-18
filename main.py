@@ -184,22 +184,18 @@ def main():
         p4.axis.visible = False
 
 
-
         # show plots
         if not st.session_state.mode:
             st.write("First let's see the top 20 best-selling games:")
         
         col_plot1, col_plot6  = st.columns(spec=[5,2.5])
-        with col_plot1:
-            st.bokeh_chart(p1, use_container_width=True)
-        with col_plot6:
-            st.bokeh_chart(p6, use_container_width=True)
+        col_plot1.bokeh_chart(p1, use_container_width=True)
+        col_plot6.bokeh_chart(p6, use_container_width=True)
         
         if not st.session_state.mode:
             st.write(f"""
                 Ranks from 20 to 2 had an average of __{avg_gs:.2f}M__ Global sales;
                 \rBut '__{top_g["Name"][0]}__' had __{top_g["Global_Sales"][0]}M__ Sales!""")
-
             st.write(f"This chart shows other popular games from {top_g['Publisher'][0]}, {top_g['Name'][0]}'s publisher:")
         
         st.bokeh_chart(p2, use_container_width=True)
@@ -209,10 +205,8 @@ def main():
             st.write(f"This publisher has made {totalg_publisher} games in total, so let's see how many games they made each year:")
 
         col_plot4, col_plot3 = st.columns([2.5,5])
-        with col_plot3:
-            st.bokeh_chart(p3, use_container_width=True)
-        with col_plot4:
-            st.bokeh_chart(p4, use_container_width=True)
+        col_plot3.bokeh_chart(p3, use_container_width=True)
+        col_plot4.bokeh_chart(p4, use_container_width=True)
 
         if not st.session_state.mode:
             st.write(f"According to the plot, __{top_g['Name'][0]}__ released 57 games in 2004, Thats __6.3X__ or __533%__ more games than 2003!")
@@ -232,57 +226,42 @@ def main():
         p5.circle(x=range(len(dt_model.y_pred)), y=dt_model.y_pred, legend_label="Predicted", color=color_palette[3], alpha=0.5)
         p5.circle(x=range(len(dt_model.y_test)), y=dt_model.y_test, legend_label="Actual Labels", color=color_palette[0], alpha=0.5)
         
-        
         if st.session_state.mode:
             col_f1, col_f2, col_f3, col_f4 , col_f5= st.columns(5)
             with col_f1:
                 pr_publisher = st.selectbox("Publisher", data["Publisher"].unique(),index=0)
                 pr_publisher = "Publisher_"+pr_publisher
-            with col_f2:
-                pr_platform = st.selectbox("Platform", data["Platform"].unique(),index=14)
-            with col_f3:
-                pr_genre = st.selectbox("Genre", genre_names, index=3)
-            with col_f4:
-                pr_year = st.number_input("Year", min_value=1900, max_value=2100, value=2017)
+            pr_platform = col_f2.selectbox("Platform", data["Platform"].unique(),index=14)
+            pr_genre = col_f3.selectbox("Genre", genre_names, index=3)
+            pr_year = col_f4.number_input("Year", min_value=1900, max_value=2100, value=2017)
             with col_f5:
                 st.write("<br>",unsafe_allow_html=True)
                 predict_stats = st.button("Predict",use_container_width=True)
             
-            ### needs function
-            if "Platform_"+pr_platform not in dt_model.data.columns:
-                st.write(pr_platform)
-                pr_platform = "Platform_Other"
-                st.write(pr_platform)
-            else:
-                pr_platform = "Platform_"+pr_platform
-            if pr_publisher not in dt_model.data.columns:
-                pr_publisher = "Other"
+            pr_platform, pr_publisher = fu.convert_inputs(pr_platform, pr_publisher, dt_model.data.columns)
                 
             for i,g in enumerate(genre_names):
                 if pr_genre == g:
-                    pr_genre = i
-                    
-        else:    
-            pr_publisher = "Publisher_Nintendo"
-            pr_platform = "Platform_DS"
-            pr_genre = 3
-            pr_year = 2017
+                    pr_genre = i       
+
+        else:
+            pr_publisher, pr_platform = "Publisher_Nintendo", "Platform_DS"
+            pr_genre, pr_year = 3, 2017
             predict_stats=True
-        
         if predict_stats:
             dt_predict = dt_model.predict(publisher=pr_publisher, platform=pr_platform, genre=pr_genre, year=pr_year)
-        
+            
         
         if not st.session_state.mode:
             ### ML
+            # inputs
             pub_pr_platform = list(data["Platform"].unique())
-
+            
             for p in pub_pr_platform.copy():
                 if "Platform_" + p not in dt_model.data.columns:
                     pub_pr_platform.remove(p)
             pub_pr_platform.append("Other")
 
-            # input
             pub_pr_publisher = "Nintendo"
             pub_pr_year = 2017
             # pub_pr_platform
@@ -316,7 +295,6 @@ def main():
             publisher_predict = publisher_predict.sort_values(by="Global_Sales",ascending=False)
             
             ####
-            
 
             st.write(f"If {publisher} plans their next role-playing game for PC in 2017, how much will it sale on global?")
             st.write("To predict and find out, let's train a Desicion Tree model with features: Year, Genre, Platform and Publisher.")
